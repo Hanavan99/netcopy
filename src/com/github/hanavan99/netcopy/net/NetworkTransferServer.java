@@ -11,26 +11,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NetworkTransferServer extends NetworkTransfer {
 
 	private final Thread receiveThread;
+	//private HashMap<Integer, FileInputStream> fileMap = new HashMap<Integer, FileInputStream>();
+	private final Object fileLock = new Object();
+	private boolean fileAccepted;
 
-	public NetworkTransferServer(Socket socket, File directory, int bufferSize, INetworkCallback callback) {
+	public NetworkTransferServer(Socket socket, File directory, int bufferSize, INetworkCallback callback) throws IOException {
 		super(socket, directory, callback, bufferSize);
 
 		receiveThread = new Thread(() -> {
 			try {
-				// create streams
-				DataInputStream dis = new DataInputStream(socket.getInputStream());
-
 				// continue running
 				while (true) {
-					switch (dis.readInt()) {
+					switch (in.readInt()) {
 					case PACKET_SETTINGS:
-						boolean allowClientChanges = dis.readBoolean();
-						boolean createMissingFolders = dis.readBoolean();
-						boolean purgeDirectory = dis.readBoolean();
-						boolean transferNonexistingFiles = dis.readBoolean();
-						boolean transferExistingFiles = dis.readBoolean();
-						int filePreferenceMode = dis.readInt();
-						callback.settingsChanged(allowClientChanges, createMissingFolders, purgeDirectory, transferNonexistingFiles, transferExistingFiles, filePreferenceMode);
+						boolean allowClientChanges = in.readBoolean();
+						boolean createMissingFolders = in.readBoolean();
+						boolean purgeDirectory = in.readBoolean();
+						boolean transferNonexistingFiles = in.readBoolean();
+						boolean transferExistingFiles = in.readBoolean();
+						int filePreferenceMode = in.readInt();
+						if (!ignoreSettingsUpdate) {
+							callback.settingsChanged(allowClientChanges, createMissingFolders, purgeDirectory, transferNonexistingFiles, transferExistingFiles, filePreferenceMode);
+						}
+						ignoreSettingsUpdate = false;
+						break;
+					case PACKET_FILE_ACCEPT:
+						fileAccepted = true;
+						fileLock.notify();
+						break;
+					case PACKET_FILE_REJECT:
+						fileAccepted = false;
+						fileLock.notify();
 						break;
 					}
 				}
@@ -42,26 +53,37 @@ public class NetworkTransferServer extends NetworkTransfer {
 	}
 
 	public void transfer() throws IOException {
+		// kill receive thread
+		receiveThread.interrupt();
+		try {
+			receiveThread.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		// create buffer and streams
 		byte[] buffer = new byte[getBufferSize()];
-		DataInputStream dis = new DataInputStream(getSocket().getInputStream());
-		DataOutputStream dos = new DataOutputStream(getSocket().getOutputStream());
 		INetworkCallback callback = getCallback();
 
 		// count number of files
-		int maxFile = getFileCount(getDirectory());
+		int fileCount = getFileCount(getDirectory());
 
 		// alert client we are starting
 		callback.transferStarted();
-		dos.writeInt(PACKET_START);
+		writeStartPacket(fileCount);
 
 		// transfer files
-		callback.messageLogged("transferring " + maxFile + " files...\n");
-		transfer(getDirectory(), buffer, dis, dos, new AtomicInteger(0), maxFile);
-		callback.messageLogged("done.");
+		try {
+			callback.messageLogged("transferring " + fileCount + " files...\n");
+			transfer(getDirectory(), buffer, in, out, new AtomicInteger(0), fileCount);
+			callback.messageLogged("done.");
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			callback.messageLogged("\nProcess was interrupted!\n");
+		}
 
 		// alert client we are done
-		dos.writeInt(PACKET_END);
+		writeEndPacket();
 		callback.transferEnded();
 	}
 
@@ -77,39 +99,46 @@ public class NetworkTransferServer extends NetworkTransfer {
 		return count;
 	}
 
-	private void transfer(File directory, byte[] buffer, DataInputStream dis, DataOutputStream dos, AtomicInteger curFile, int maxFile) throws IOException {
+	private void transfer(File directory, byte[] buffer, DataInputStream dis, DataOutputStream dos, AtomicInteger curFile, int maxFile) throws IOException, InterruptedException {
 		// get callback
 		INetworkCallback callback = getCallback();
 
 		// iterate through files list
 		for (File f : directory.listFiles()) {
+
 			// determine file type
 			if (f.isDirectory()) {
+
 				// go through files in this folder
 				transfer(f, buffer, dis, dos, curFile, maxFile);
 			} else if (f.isFile()) {
+
 				// tell client about file
-				dos.writeInt(PACKET_FILE);
 				String relativePath = getRelativePath(getDirectory(), f);
 				long lastModified = f.lastModified();
 				long length = f.length();
-				dos.writeUTF(relativePath);
-				dos.writeLong(lastModified);
-				dos.writeLong(length);
+				writeFileProposePacket(relativePath, lastModified, length);
 				callback.messageLogged("sending file \"" + f.getAbsolutePath() + "\"... ");
 
+				// wait for response
+				synchronized (fileLock) {
+					fileLock.wait();
+				}
+
 				// see if client wants file
-				if (dis.readBoolean()) {
+				if (fileAccepted) {
 					// attempt to send file
 					try {
 						FileInputStream fis = new FileInputStream(f);
 						dos.writeBoolean(true);
+						dos.flush();
 						transfer(fis, dos, buffer, length);
 						fis.close();
 						callback.messageLogged("done.\n");
 					} catch (IOException e) {
 						e.printStackTrace();
 						dos.writeBoolean(false);
+						dos.flush();
 						callback.messageLogged("failed: " + e.getMessage() + "\n");
 					}
 				} else {
@@ -118,9 +147,6 @@ public class NetworkTransferServer extends NetworkTransfer {
 				// update progress
 				curFile.incrementAndGet();
 				callback.progressUpdated(curFile.get(), maxFile);
-				dos.writeInt(PACKET_PROGRESS);
-				dos.writeInt(curFile.get());
-				dos.writeInt(maxFile);
 			} else {
 				throw new IllegalStateException("hit something not a file or directory");
 			}

@@ -1,5 +1,6 @@
 package com.github.hanavan99.netcopy.net;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -9,28 +10,56 @@ import java.net.Socket;
 
 public abstract class NetworkTransfer {
 
+	/**
+	 * Default buffer size for file transfers.
+	 */
 	public static final int DEFAULT_BUFFER_SIZE = 0xFFFF;
-	public static final int PACKET_START = 0;
-	public static final int PACKET_FILE = 1;
-	public static final int PACKET_PROGRESS = 2;
-	public static final int PACKET_END = 3;
-	public static final int PACKET_SETTINGS = 4;
 
-	private final Socket socket;
+	/**
+	 * Packet ID for packet sent when transfer has started.
+	 */
+	public static final int PACKET_START = 0;
+
+	/**
+	 * Packet ID for packet sent when settings have changed on the client or server.
+	 */
+	public static final int PACKET_SETTINGS = 1;
+
+	/**
+	 * Packet ID for packet sent for proposing a file for the client to receive.
+	 */
+	public static final int PACKET_FILE_PROPOSE = 2;
+
+	/**
+	 * Packet ID for packet sent when the client accepts a file.
+	 */
+	public static final int PACKET_FILE_ACCEPT = 3;
+
+	/**
+	 * Packet ID for packet sent when the client rejects a file.
+	 */
+	public static final int PACKET_FILE_REJECT = 4;
+
+	/**
+	 * Packet ID for packet sent when the transfer has finished.
+	 */
+	public static final int PACKET_END = 5;
+
+	protected final Socket socket;
+	protected final DataInputStream in;
+	protected final DataOutputStream out;
 	private File directory;
 	private INetworkCallback callback;
 	private int bufferSize = 0xFFFF;
 	protected boolean ignoreSettingsUpdate = false;
 
-	public NetworkTransfer(Socket socket, File directory, INetworkCallback callback, int bufferSize) {
+	public NetworkTransfer(Socket socket, File directory, INetworkCallback callback, int bufferSize) throws IOException {
 		this.socket = socket;
+		this.in = new DataInputStream(socket.getInputStream());
+		this.out = new DataOutputStream(socket.getOutputStream());
 		this.directory = directory;
 		this.bufferSize = bufferSize;
 		this.callback = callback;
-	}
-
-	public Socket getSocket() {
-		return socket;
 	}
 
 	public File getDirectory() {
@@ -73,20 +102,39 @@ public abstract class NetworkTransfer {
 		return f.getAbsolutePath().substring(base.getAbsolutePath().length() + 1);
 	}
 
-	public void sendSettingsChanged(boolean allowClientChanges, boolean createMissingFolders, boolean purgeDirectory, boolean transferNonexistingFiles, boolean transferExistingFiles, int filePreferenceMode) {
-		try {
-			DataOutputStream dos = new DataOutputStream(getSocket().getOutputStream());
-			dos.writeInt(PACKET_SETTINGS);
-			dos.writeBoolean(allowClientChanges);
-			dos.writeBoolean(createMissingFolders);
-			dos.writeBoolean(purgeDirectory);
-			dos.writeBoolean(transferNonexistingFiles);
-			dos.writeBoolean(transferExistingFiles);
-			dos.writeInt(filePreferenceMode);
-			ignoreSettingsUpdate = true;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public void writeStartPacket(int fileCount) throws IOException {
+		out.writeInt(PACKET_START);
+		out.writeInt(fileCount);
+	}
+
+	public void writeFileAcceptPacket() throws IOException {
+		out.writeInt(PACKET_FILE_ACCEPT);
+	}
+
+	public void writeFileRejectPacket() throws IOException {
+		out.writeInt(PACKET_FILE_REJECT);
+	}
+
+	public void writeFileProposePacket(String relativePath, long lastModified, long length) throws IOException {
+		out.writeInt(PACKET_FILE_PROPOSE);
+		out.writeUTF(relativePath);
+		out.writeLong(lastModified);
+		out.writeLong(length);
+	}
+
+	public void writeEndPacket() throws IOException {
+		out.writeInt(PACKET_END);
+	}
+
+	public void sendSettingsChanged(boolean allowClientChanges, boolean createMissingFolders, boolean purgeDirectory, boolean transferNonexistingFiles, boolean transferExistingFiles, int filePreferenceMode) throws IOException {
+		out.writeInt(PACKET_SETTINGS);
+		out.writeBoolean(allowClientChanges);
+		out.writeBoolean(createMissingFolders);
+		out.writeBoolean(purgeDirectory);
+		out.writeBoolean(transferNonexistingFiles);
+		out.writeBoolean(transferExistingFiles);
+		out.writeInt(filePreferenceMode);
+		ignoreSettingsUpdate = true;
 	}
 
 }
