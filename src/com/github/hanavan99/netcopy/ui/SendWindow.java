@@ -92,8 +92,13 @@ public class SendWindow extends Window {
 		allowClientChanges.setBounds(10, 20, 600, 20);
 		allowClientChanges.addActionListener((_e) -> {
 			if (server != null) {
-				server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
-						filePreferenceMode.getSelectedIndex());
+				try {
+					server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
+							filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to client: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(allowClientChanges);
@@ -102,8 +107,13 @@ public class SendWindow extends Window {
 		createMissingFolders.setBounds(10, 50, 600, 20);
 		createMissingFolders.addActionListener((_e) -> {
 			if (server != null) {
-				server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
-						filePreferenceMode.getSelectedIndex());
+				try {
+					server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
+							filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to client: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(createMissingFolders);
@@ -112,8 +122,13 @@ public class SendWindow extends Window {
 		purgeDirectory.setBounds(10, 80, 600, 20);
 		purgeDirectory.addActionListener((_e) -> {
 			if (server != null) {
-				server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
-						filePreferenceMode.getSelectedIndex());
+				try {
+					server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
+							filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to client: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(purgeDirectory);
@@ -122,8 +137,13 @@ public class SendWindow extends Window {
 		transferNonexistingFiles.setBounds(10, 110, 600, 20);
 		transferNonexistingFiles.addActionListener((_e) -> {
 			if (server != null) {
-				server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
-						filePreferenceMode.getSelectedIndex());
+				try {
+					server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
+							filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to client: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(transferNonexistingFiles);
@@ -132,8 +152,13 @@ public class SendWindow extends Window {
 		transferExistingFiles.setBounds(10, 140, 250, 20);
 		transferExistingFiles.addActionListener((_e) -> {
 			if (server != null) {
-				server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
-						filePreferenceMode.getSelectedIndex());
+				try {
+					server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
+							filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to client: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(transferExistingFiles);
@@ -146,8 +171,13 @@ public class SendWindow extends Window {
 		filePreferenceMode.setBounds(120, 170, 400, 20);
 		filePreferenceMode.addActionListener((_e) -> {
 			if (server != null) {
-				server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
-						filePreferenceMode.getSelectedIndex());
+				try {
+					server.sendSettingsChanged(allowClientChanges.isSelected(), createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(),
+							filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to client: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(filePreferenceMode);

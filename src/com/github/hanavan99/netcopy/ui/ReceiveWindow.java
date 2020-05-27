@@ -69,7 +69,12 @@ public class ReceiveWindow extends Window {
 		createMissingFolders.setBounds(10, 20, 600, 20);
 		createMissingFolders.addActionListener((_e) -> {
 			if (client != null) {
-				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+				try {
+					client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+				} catch (IOException e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
+				}
 			}
 		});
 		panel.add(createMissingFolders);
@@ -77,8 +82,11 @@ public class ReceiveWindow extends Window {
 		purgeDirectory = new JCheckBox("Delete parent directory on the client before transfer (cannot be undone!)", false);
 		purgeDirectory.setBounds(10, 50, 600, 20);
 		purgeDirectory.addActionListener((_e) -> {
-			if (client != null) {
+			try {
 				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+			} catch (IOException e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
 			}
 		});
 		panel.add(purgeDirectory);
@@ -86,8 +94,11 @@ public class ReceiveWindow extends Window {
 		transferNonexistingFiles = new JCheckBox("Transfer files that don't exist on the client", true);
 		transferNonexistingFiles.setBounds(10, 80, 600, 20);
 		transferNonexistingFiles.addActionListener((_e) -> {
-			if (client != null) {
+			try {
 				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+			} catch (IOException e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
 			}
 		});
 		panel.add(transferNonexistingFiles);
@@ -95,8 +106,11 @@ public class ReceiveWindow extends Window {
 		transferExistingFiles = new JCheckBox("Transfer files that exist on the client", true);
 		transferExistingFiles.setBounds(10, 110, 250, 20);
 		transferExistingFiles.addActionListener((_e) -> {
-			if (client != null) {
+			try {
 				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+			} catch (IOException e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
 			}
 		});
 		panel.add(transferExistingFiles);
@@ -108,8 +122,11 @@ public class ReceiveWindow extends Window {
 		filePreferenceMode = new JComboBox<FilePreferenceMode>(FilePreferenceMode.values());
 		filePreferenceMode.setBounds(120, 140, 400, 20);
 		filePreferenceMode.addActionListener((_e) -> {
-			if (client != null) {
+			try {
 				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+			} catch (IOException e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
 			}
 		});
 		panel.add(filePreferenceMode);

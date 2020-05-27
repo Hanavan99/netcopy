@@ -14,7 +14,7 @@ public class ModeWindow extends Window {
 		sendButton.setBounds(10, 10, 150, 100);
 		sendButton.addActionListener((_e) -> {
 			frame.setVisible(false);
-			SendWindow send = new SendWindow(this);
+			new SendWindow(this);
 		});
 		frame.add(sendButton);
 
@@ -22,7 +22,7 @@ public class ModeWindow extends Window {
 		receiveButton.setBounds(170, 10, 150, 100);
 		receiveButton.addActionListener((_e) -> {
 			frame.setVisible(false);
-			ReceiveWindow receive = new ReceiveWindow(this);
+			new ReceiveWindow(this);
 		});
 		frame.add(receiveButton);
 	}
