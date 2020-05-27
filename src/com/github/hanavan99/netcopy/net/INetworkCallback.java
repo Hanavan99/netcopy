@@ -10,6 +10,8 @@ public interface INetworkCallback {
 
 	public void progressUpdated(int cur, int max);
 
+	public void fileProgressUpdated(long cur, long max);
+
 	public void settingsChanged(boolean allowClientChanges, boolean createMissingFolders, boolean purgeDirectory, boolean transferNonexistingFiles, boolean transferExistingFiles, int filePreferenceMode);
 
 }

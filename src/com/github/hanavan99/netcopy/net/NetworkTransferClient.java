@@ -173,7 +173,7 @@ public class NetworkTransferClient extends NetworkTransfer {
 		// tell server we want the file
 		writeFileAcceptPacket();
 		if (dis.readBoolean()) { // check if server can send file
-			transfer(dis, fos, buffer, length);
+			transfer(dis, fos, buffer, length, callback);
 			fos.close();
 			file.setLastModified(lastModified);
 			callback.messageLogged("done.\n");

@@ -13,7 +13,7 @@ public abstract class NetworkTransfer {
 	/**
 	 * Default buffer size for file transfers.
 	 */
-	public static final int DEFAULT_BUFFER_SIZE = 0xFFFF;
+	public static final int DEFAULT_BUFFER_SIZE = 0x100000;
 
 	/**
 	 * Packet ID for packet sent when transfer has started.
@@ -86,12 +86,16 @@ public abstract class NetworkTransfer {
 		return ignoreSettingsUpdate;
 	}
 
-	protected void transfer(InputStream in, OutputStream out, byte[] buffer, long length) throws IOException {
+	protected void transfer(InputStream in, OutputStream out, byte[] buffer, long length, INetworkCallback callback) throws IOException {
+		final long fileLength = length;
 		while (length > 0) {
 			int cnt = in.read(buffer, 0, (int) Math.min(buffer.length, length));
 			if (cnt > 0) {
 				out.write(buffer, 0, cnt);
 				length -= cnt;
+				if (callback != null) {
+					callback.fileProgressUpdated(fileLength - length, fileLength);
+				}
 			} else {
 				continue;
 			}
@@ -126,7 +130,7 @@ public abstract class NetworkTransfer {
 		out.writeInt(PACKET_END);
 	}
 
-	public void sendSettingsChanged(boolean allowClientChanges, boolean createMissingFolders, boolean purgeDirectory, boolean transferNonexistingFiles, boolean transferExistingFiles, int filePreferenceMode) throws IOException {
+	public void writeSettingsPacket(boolean allowClientChanges, boolean createMissingFolders, boolean purgeDirectory, boolean transferNonexistingFiles, boolean transferExistingFiles, int filePreferenceMode) throws IOException {
 		out.writeInt(PACKET_SETTINGS);
 		out.writeBoolean(allowClientChanges);
 		out.writeBoolean(createMissingFolders);
@@ -135,6 +139,10 @@ public abstract class NetworkTransfer {
 		out.writeBoolean(transferExistingFiles);
 		out.writeInt(filePreferenceMode);
 		ignoreSettingsUpdate = true;
+	}
+
+	public void close() throws IOException {
+		socket.close();
 	}
 
 }

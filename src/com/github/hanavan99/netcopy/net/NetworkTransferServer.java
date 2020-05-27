@@ -37,11 +37,15 @@ public class NetworkTransferServer extends NetworkTransfer {
 						break;
 					case PACKET_FILE_ACCEPT:
 						fileAccepted = true;
-						fileLock.notify();
+						synchronized (fileLock) {
+							fileLock.notify();
+						}
 						break;
 					case PACKET_FILE_REJECT:
 						fileAccepted = false;
-						fileLock.notify();
+						synchronized (fileLock) {
+							fileLock.notify();
+						}
 						break;
 					}
 				}
@@ -53,13 +57,6 @@ public class NetworkTransferServer extends NetworkTransfer {
 	}
 
 	public void transfer() throws IOException {
-		// kill receive thread
-		receiveThread.interrupt();
-		try {
-			receiveThread.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 
 		// create buffer and streams
 		byte[] buffer = new byte[getBufferSize()];
@@ -70,6 +67,7 @@ public class NetworkTransferServer extends NetworkTransfer {
 
 		// alert client we are starting
 		callback.transferStarted();
+		callback.progressUpdated(0, fileCount);
 		writeStartPacket(fileCount);
 
 		// transfer files
@@ -127,12 +125,13 @@ public class NetworkTransferServer extends NetworkTransfer {
 
 				// see if client wants file
 				if (fileAccepted) {
+					
 					// attempt to send file
 					try {
 						FileInputStream fis = new FileInputStream(f);
 						dos.writeBoolean(true);
 						dos.flush();
-						transfer(fis, dos, buffer, length);
+						transfer(fis, dos, buffer, length, callback);
 						fis.close();
 						callback.messageLogged("done.\n");
 					} catch (IOException e) {

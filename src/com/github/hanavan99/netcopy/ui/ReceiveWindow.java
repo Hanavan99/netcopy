@@ -22,22 +22,13 @@ import com.github.hanavan99.netcopy.net.FilePreferenceMode;
 import com.github.hanavan99.netcopy.net.INetworkCallback;
 import com.github.hanavan99.netcopy.net.NetworkTransferClient;
 
-public class ReceiveWindow extends Window {
+public class ReceiveWindow extends TransferWindow {
 
-	private JTextField pathText;
-	private JButton browseButton;
-	private JCheckBox createMissingFolders;
-	private JCheckBox purgeDirectory;
-	private JCheckBox transferNonexistingFiles;
-	private JCheckBox transferExistingFiles;
-	private JComboBox<FilePreferenceMode> filePreferenceMode;
-	private JTextArea statusText;
-	private JProgressBar progressBar;
 	private JButton connectButton;
 	private NetworkTransferClient client;
 
 	public ReceiveWindow(Window parent) {
-		super("Netcopy - Receive", 50, 50, 725, 690);
+		super("Netcopy - Receive", 50, 50, 725, 720);
 
 		createLabel("Transfer path:", 10, 10);
 
@@ -70,7 +61,7 @@ public class ReceiveWindow extends Window {
 		createMissingFolders.addActionListener((_e) -> {
 			if (client != null) {
 				try {
-					client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+					client.writeSettingsPacket(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
 				} catch (IOException e) {
 					e.printStackTrace();
 					JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
@@ -83,7 +74,7 @@ public class ReceiveWindow extends Window {
 		purgeDirectory.setBounds(10, 50, 600, 20);
 		purgeDirectory.addActionListener((_e) -> {
 			try {
-				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+				client.writeSettingsPacket(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
 			} catch (IOException e) {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
@@ -95,7 +86,7 @@ public class ReceiveWindow extends Window {
 		transferNonexistingFiles.setBounds(10, 80, 600, 20);
 		transferNonexistingFiles.addActionListener((_e) -> {
 			try {
-				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+				client.writeSettingsPacket(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
 			} catch (IOException e) {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
@@ -107,7 +98,7 @@ public class ReceiveWindow extends Window {
 		transferExistingFiles.setBounds(10, 110, 250, 20);
 		transferExistingFiles.addActionListener((_e) -> {
 			try {
-				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+				client.writeSettingsPacket(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
 			} catch (IOException e) {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
@@ -123,7 +114,7 @@ public class ReceiveWindow extends Window {
 		filePreferenceMode.setBounds(120, 140, 400, 20);
 		filePreferenceMode.addActionListener((_e) -> {
 			try {
-				client.sendSettingsChanged(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
+				client.writeSettingsPacket(false, createMissingFolders.isSelected(), purgeDirectory.isSelected(), transferNonexistingFiles.isSelected(), transferExistingFiles.isSelected(), filePreferenceMode.getSelectedIndex());
 			} catch (IOException e) {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(frame, "Failed to send settings to server: " + e.getMessage());
@@ -139,9 +130,23 @@ public class ReceiveWindow extends Window {
 		scrollPane.setBounds(10, 220, 700, 400);
 		frame.add(scrollPane);
 
+		progressLabel = new JLabel("Total progress: (0/0)");
+		progressLabel.setBounds(10, 630, 180, 20);
+		frame.add(progressLabel);
+		
 		progressBar = new JProgressBar();
-		progressBar.setBounds(10, 630, 590, 20);
+		progressBar.setBounds(200, 630, 400, 20);
+		progressBar.setStringPainted(true);
 		frame.add(progressBar);
+		
+		fileProgressLabel = new JLabel("File progress: (0B/0B)");
+		fileProgressLabel.setBounds(10, 660, 180, 20);
+		frame.add(fileProgressLabel);
+
+		fileProgressBar = new JProgressBar();
+		fileProgressBar.setBounds(200, 660, 400, 20);
+		fileProgressBar.setStringPainted(true);
+		frame.add(fileProgressBar);
 
 		connectButton = new JButton("Connect");
 		connectButton.setBounds(610, 630, 100, 20);
@@ -172,20 +177,26 @@ public class ReceiveWindow extends Window {
 
 		frame.repaint();
 	}
+	
+	@Override
+	public void setUIState(boolean enabled) {
+		super.setUIState(enabled);
+		pathText.setEnabled(enabled);
+		browseButton.setEnabled(enabled);
+	}
 
 	private final class NC implements INetworkCallback {
 
 		@Override
 		public void transferStarted() {
-			pathText.setEnabled(false);
-			browseButton.setEnabled(false);
+			statusText.setText("");
+			setUIState(false);
 			client.setDirectory(new File(pathText.getText()));
 		}
 
 		@Override
 		public void transferEnded() {
-			pathText.setEnabled(true);
-			browseButton.setEnabled(true);
+			setUIState(true);
 			JOptionPane.showMessageDialog(frame, "Transfer finished!");
 		}
 
@@ -196,23 +207,17 @@ public class ReceiveWindow extends Window {
 
 		@Override
 		public void progressUpdated(int cur, int max) {
-			progressBar.setMaximum(max);
-			progressBar.setValue(cur);
+			updateProgress(cur, max);
 		}
 
 		@Override
 		public void settingsChanged(boolean allowClientChanges, boolean createMissingFolders, boolean purgeDirectory, boolean transferNonexistingFiles, boolean transferExistingFiles, int filePreferenceMode) {
-			ReceiveWindow.this.createMissingFolders.setSelected(createMissingFolders);
-			ReceiveWindow.this.purgeDirectory.setSelected(purgeDirectory);
-			ReceiveWindow.this.transferNonexistingFiles.setSelected(transferNonexistingFiles);
-			ReceiveWindow.this.transferExistingFiles.setSelected(transferExistingFiles);
-			ReceiveWindow.this.filePreferenceMode.setSelectedItem(FilePreferenceMode.values()[filePreferenceMode]);
+			updateSettings(allowClientChanges, createMissingFolders, purgeDirectory, transferNonexistingFiles, transferExistingFiles, filePreferenceMode);
+		}
 
-			ReceiveWindow.this.createMissingFolders.setEnabled(allowClientChanges);
-			ReceiveWindow.this.purgeDirectory.setEnabled(allowClientChanges);
-			ReceiveWindow.this.transferNonexistingFiles.setEnabled(allowClientChanges);
-			ReceiveWindow.this.transferExistingFiles.setEnabled(allowClientChanges);
-			ReceiveWindow.this.filePreferenceMode.setEnabled(allowClientChanges);
+		@Override
+		public void fileProgressUpdated(long cur, long max) {
+			updateFileProgress(cur, max);
 		}
 
 	}

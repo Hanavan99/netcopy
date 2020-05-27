@@ -21,5 +21,7 @@ public abstract class Window {
 		label.setBounds(x, y, label.getFontMetrics(label.getFont()).stringWidth(text) + 10, 20);
 		frame.add(label);
 	}
+	
+	
 
 }
